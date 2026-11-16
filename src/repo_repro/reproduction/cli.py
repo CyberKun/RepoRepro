@@ -1,7 +1,9 @@
 """Explicit generation/run/verification commands; the model cannot select these options."""
 
+import json
 import os
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from pydantic import SecretStr, ValidationError
@@ -9,11 +11,14 @@ from pydantic import SecretStr, ValidationError
 from repo_repro.ai.openai_compatible import OpenAICompatibleProvider, OpenAIConfig
 from repo_repro.core.exceptions import InputError, RepoReproError
 from repo_repro.core.models import Record
+from repo_repro.github.issue_parser import IssueParser
 from repo_repro.reproduction.executor import ReproductionExecutor
 from repo_repro.reproduction.generator import TestGenerator
+from repo_repro.reproduction.investigator import AIInvestigator
 from repo_repro.reproduction.models import (
     DifferentialStatus,
     ExecutionEnvironment,
+    FailureOracle,
     GeneratedTest,
     ReproductionInput,
     ReproductionStatus,
@@ -31,13 +36,18 @@ def read_json(path: Path) -> bytes:
     return content
 
 
+def echo_record(record: Record) -> None:
+    """Keep structured output lossless on UTF-8 and legacy console encodings alike."""
+    typer.echo(json.dumps(record.model_dump(mode="json"), ensure_ascii=True, indent=2))
+
+
 def write_result(record: Record, output: Path | None) -> None:
     text = record.model_dump_json(indent=2)
     if output:
         output.write_text(text + "\n", encoding="utf-8")
         typer.echo(f"Saved to {output}")
     else:
-        typer.echo(text)
+        echo_record(record)
 
 
 def failure(error: Exception) -> None:
@@ -59,6 +69,7 @@ def generate(
     local_http: bool = False,
     legacy_max_tokens: bool = False,
     test_file: Path | None = None,
+    reasoning_effort: str | None = None,
 ) -> None:
     """Generate a candidate, or seal an explicit user test without AI."""
     try:
@@ -77,6 +88,7 @@ def generate(
                     api_key=SecretStr(key) if key else None,
                     allow_local_http=local_http,
                     token_parameter="max_tokens" if legacy_max_tokens else "max_completion_tokens",
+                    reasoning_effort=reasoning_effort,
                 ),
                 store,
             )
@@ -141,3 +153,72 @@ def register(app: typer.Typer) -> None:
     app.command("generate")(generate)
     app.command("reproduce")(reproduce)
     app.command("verify")(verify)
+    app.command("investigate")(investigate)
+
+
+def investigate(
+    repository: Path,
+    issue_json: Path,
+    oracle: Path,
+    environment: Path,
+    model: Annotated[str, typer.Option(help="Explicit model ID for planning and test generation.")],
+    ref: str = "HEAD",
+    fixed_commit: str | None = None,
+    max_candidates: int = 3,
+    max_plan_attempts: int = 2,
+    max_model_tokens: int = 4096,
+    output: Path | None = None,
+    result_output: Path | None = None,
+    artifacts: Path = Path(".repo-repro/evidence"),
+    base_url: str = "https://api.openai.com/v1",
+    local_http: bool = False,
+    legacy_max_tokens: bool = False,
+    reasoning_effort: str | None = None,
+    initial_test: Path | None = None,
+) -> None:
+    """Use AI to localize a bug and revise candidates from bounded original-version feedback."""
+    try:
+        if not 1 <= max_candidates <= 5:
+            raise InputError("--max-candidates must be between 1 and 5")
+        contract = FailureOracle.model_validate_json(read_json(oracle))
+        settings = ExecutionEnvironment.model_validate_json(read_json(environment))
+        issue = IssueParser().parse(issue_json=issue_json)
+        store = FileArtifactStore(artifacts)
+        key = os.environ.get("OPENAI_API_KEY")
+        provider = OpenAICompatibleProvider(
+            OpenAIConfig(
+                model=model,
+                base_url=base_url,
+                api_key=SecretStr(key) if key else None,
+                allow_local_http=local_http,
+                max_completion_tokens=max_model_tokens,
+                token_parameter="max_tokens" if legacy_max_tokens else "max_completion_tokens",
+                reasoning_effort=reasoning_effort,
+            ),
+            store,
+        )
+        backend = DockerSandboxRunner(image=settings.image, artifacts=store)
+        session = AIInvestigator(provider, ReproductionExecutor(backend, store), store).run(
+            issue,
+            repository,
+            contract,
+            settings,
+            ref=ref,
+            max_candidates=max_candidates,
+            fixed_commit=fixed_commit,
+            max_plan_attempts=max_plan_attempts,
+            initial_code=read_json(initial_test).decode("utf-8")
+            if initial_test is not None
+            else None,
+        )
+        write_result(session, output)
+        selected = session.verification or session.selected_result
+        if result_output is not None and selected is not None:
+            write_result(selected, result_output)
+        if session.verification is not None:
+            if session.verification.status is not DifferentialStatus.DIFFERENTIAL_VALIDATED:
+                raise typer.Exit(1)
+        elif session.stop_reason != "reproduced":
+            raise typer.Exit(1)
+    except (RepoReproError, ValidationError, ValueError, OSError) as error:
+        failure(error)

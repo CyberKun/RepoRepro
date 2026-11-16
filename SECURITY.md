@@ -26,4 +26,6 @@ Diagnostic exports redact known secrets and common credential patterns. Detected
 
 Original artifact stores preserve raw evidence and may contain secrets. Model-assisted generation sends the selected context to the configured provider. Keep artifact stores, API keys, local configuration, and private Capsules out of version control.
 
+The development-branch investigator additionally sends a filtered file catalog, seed context, and redacted original-version execution feedback to the selected provider. Planning hypotheses are not static facts. Planning corrections and candidate revisions are budgeted; model output cannot widen runtime policy or change the sealed oracle. Fixed-version execution is evaluated separately and is not fed back into test generation.
+
 Git clone transfer does not have a cross-platform hard disk quota. Archive and output budgets limit later processing but do not replace acquisition quotas or stronger host isolation.

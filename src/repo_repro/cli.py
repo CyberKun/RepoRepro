@@ -16,7 +16,7 @@ from repo_repro.core.context import IssueContext
 from repo_repro.core.exceptions import InputError, RepoReproError
 from repo_repro.github.client import GitHubClient
 from repo_repro.github.issue_parser import IssueParser
-from repo_repro.reproduction.cli import register
+from repo_repro.reproduction.cli import echo_record, register
 
 app = typer.Typer(
     name="repro",
@@ -46,7 +46,7 @@ def version() -> None:
 def _write_context(context: IssueContext, output: Path | None) -> None:
     serialized = context.model_dump_json(indent=2)
     if output is None:
-        typer.echo(serialized)
+        echo_record(context)
     else:
         output.write_text(serialized + "\n", encoding="utf-8")
         console.print("Analysis saved to " + str(output), markup=False)

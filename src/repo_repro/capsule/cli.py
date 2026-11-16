@@ -12,7 +12,7 @@ from repo_repro.capsule.replay import CapsuleReplay
 from repo_repro.capsule.schema import CapsuleManifest, json_object
 from repo_repro.core.exceptions import RepoReproError
 from repo_repro.core.models import SandboxPolicy
-from repo_repro.reproduction.cli import read_json
+from repo_repro.reproduction.cli import echo_record, read_json
 from repo_repro.reproduction.models import DifferentialResult, ReproductionResult
 from repo_repro.storage.artifacts import FileArtifactStore
 
@@ -56,7 +56,7 @@ def export(
         manifest = CapsuleExporter(FileArtifactStore(artifacts)).export(
             record, destination, diagnostic_only=diagnostic_only
         )
-        typer.echo(manifest.model_dump_json(indent=2))
+        echo_record(manifest)
     except (RepoReproError, ValidationError, ValueError, OSError) as error:
         fail(error)
 
@@ -66,7 +66,7 @@ def export(
 def inspect(capsule: Path) -> None:
     """Validate schema, complete file catalog and hashes; never load images or execute."""
     try:
-        typer.echo(validate_capsule(capsule).model_dump_json(indent=2))
+        echo_record(validate_capsule(capsule))
     except (RepoReproError, ValueError, OSError) as error:
         fail(error)
 
@@ -89,7 +89,7 @@ def replay(
     try:
         selected = SandboxPolicy.model_validate(json_object(read_json(policy)))
         report = CapsuleReplay().replay(capsule, workspace, local_policy=selected, authorized=True)
-        typer.echo(report.model_dump_json(indent=2))
+        echo_record(report)
         if report.status != "MATCHED":
             raise typer.Exit(1)
     except (RepoReproError, ValidationError, ValueError, OSError) as error:

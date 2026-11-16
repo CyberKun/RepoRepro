@@ -34,6 +34,7 @@ def build_input(
     ref: str = "HEAD",
     source_paths: tuple[str, ...] = (),
     test_paths: tuple[str, ...] = (),
+    infer_tests: bool = True,
 ) -> ReproductionInput:
     repository = PythonAnalyzer().analyze(repository_path, url=issue.repository_url, ref=ref)
     related = IssueParser().relate(issue, repository)
@@ -51,9 +52,13 @@ def build_input(
             and Path(path).name not in {"setup.py", "conftest.py"}
         )[:5]
     tests = (
-        test_paths
-        or tuple(item.value for item in related.possible_test_files)
-        or repository.test_files[:3]
+        (
+            test_paths
+            or tuple(item.value for item in related.possible_test_files)
+            or repository.test_files[:3]
+        )
+        if infer_tests
+        else test_paths
     )
     with GitRepository().open(repository_path, ref=repository.current_commit) as view:
 

@@ -49,15 +49,27 @@ class ReproductionInput(Record):
 
 
 class EvidenceQuote(Record):
-    source: str
-    quote: str = Field(min_length=1, max_length=4000)
+    source: str = Field(
+        description="Exactly 'issue.body' or a supplied file path; no section suffix."
+    )
+    quote: str = Field(
+        min_length=1,
+        max_length=4000,
+        description="A short exact substring of that source after one JSON decoding.",
+    )
 
 
 class TestProposal(Record):
     understanding: str = Field(min_length=1, max_length=8000)
     plan: str = Field(min_length=1, max_length=8000)
-    closest_test: str | None
-    test_code: str = Field(min_length=1, max_length=32_768)
+    closest_test: str | None = Field(
+        description="An existing test FILE PATH only, or null; never code or a node ID."
+    )
+    test_code: str = Field(
+        min_length=1,
+        max_length=32_768,
+        description="Python code with decoded newlines and exactly one assert.",
+    )
     evidence: tuple[EvidenceQuote, ...] = Field(min_length=1, max_length=20)
 
 

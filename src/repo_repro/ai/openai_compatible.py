@@ -95,6 +95,7 @@ class OpenAIConfig:
     max_completion_tokens: int = 4096
     token_parameter: Literal["max_tokens", "max_completion_tokens"] = "max_completion_tokens"
     allow_local_http: bool = False
+    reasoning_effort: str | None = None
 
     def __post_init__(self) -> None:
         parsed = urlsplit(self.base_url)
@@ -122,6 +123,8 @@ class OpenAIConfig:
             raise ValueError("invalid model or timeout")
         if not 1 <= self.max_completion_tokens <= 16_384:
             raise ValueError("invalid model output budget")
+        if self.reasoning_effort not in {None, "none", "low", "medium", "high"}:
+            raise ValueError("invalid model reasoning effort")
         if self.api_key and any(ord(char) < 33 for char in self.api_key.get_secret_value()):
             raise ValueError("invalid API credential")
 
@@ -162,6 +165,8 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             self.config.token_parameter: self.config.max_completion_tokens,
         }
+        if self.config.reasoning_effort is not None:
+            request["reasoning_effort"] = self.config.reasoning_effort
         payload = json.dumps(request, ensure_ascii=True).encode()
         if len(payload) > 524_288:
             raise ValueError("model request exceeded context size limit")

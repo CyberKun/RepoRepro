@@ -125,6 +125,12 @@ Uppercase arguments are inputs you supply. [The manual demo](examples/README.md#
 
 Single-version results distinguish `REPRODUCED`, `NOT_REPRODUCED`, `INCONCLUSIVE`, `ENVIRONMENT_ERROR`, and `TIMEOUT`. Differential success is `DIFFERENTIAL_VALIDATED`; flaky runs, unrelated failures, and missing evidence cannot produce it. Only the selected target test is verified, not the full project's regression suite.
 
+### AI investigation (unreleased)
+
+The development branch adds `repro investigate`: AI interprets the Issue, selects relevant source/test files, and revises candidates using validation errors or original-version execution feedback. Planning and candidate budgets bound the search. The caller's oracle, runtime, and independent verifier stay fixed; fixed-version results are not used to tune candidates.
+
+An optional `--initial-test` lets the model improve a weak existing reproducer. The selected test and ordinary result remain compatible with Capsule export. See the [AI investigation guide](docs/ai-investigation.md) for a complete DeepSeek example, limits, and the real-model validation scope. The v0.1.0 release assets retain their original generator.
+
 ## Capsule example
 
 An offline Capsule is a ZIP with one root:

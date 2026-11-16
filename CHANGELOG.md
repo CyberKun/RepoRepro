@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add AI Issue diagnosis and bounded Git file selection through `repro investigate`.
+- Revise candidate tests using local validation errors and original-version execution evidence; optionally improve a supplied seed test.
+- Keep the oracle and environment sealed, deduplicate candidate ASTs, and run fixed-version verification only after selecting the final test.
+- Add provider reasoning/output-budget options and a reusable Unicode normalization fixture. Real DeepSeek acceptance covers generation and feedback-driven revision; regular CI uses controlled responses.
+- Emit lossless ASCII-escaped JSON on the console so Unicode results do not fail under legacy encodings; file output stays UTF-8.
+
 ## 0.1.0 — 2026-11-16
 
 Initial alpha release for Python + pytest.

@@ -34,6 +34,8 @@ The helper exports a stopped base container, updates packaging/framework files w
 
 The demo prints actual command results and writes `context.json`, `generated.json`, `reproduction.json`, `verification.json`, `case.zip`, a local `policy.json`, and `replay/replay-report.json`. Output directories must be new. Inspect the recorded original/fixed statuses and replay matches; do not interpret them as a benchmark.
 
+The development branch also includes an [AI-driven Unicode demo](../docs/ai-investigation.md). It uses a real configured model to select files and generate or revise a reproducer, followed by independent Docker verification. The calculator GIF above remains the deterministic, model-free example.
+
 ## Manual workflow
 
 Run this instead of the one-command demo, using a fresh directory. Bash:

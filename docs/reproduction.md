@@ -1,6 +1,6 @@
 # Reproduction and verification
 
-Repo Repro performs a bounded experiment: seal one candidate test, validate it, run it repeatedly in fresh containers, and evaluate structured evidence. It does not autonomously edit a project or retry until a favorable result appears.
+Repo Repro performs bounded experiments: validate each candidate, run it repeatedly in fresh containers, and evaluate structured evidence. The one-shot generator remains available. The development branch also provides [AI investigation](ai-investigation.md), with bounded planning corrections and distinct candidate revisions based on original-version feedback. Project source and the caller's oracle stay fixed.
 
 ## Inputs
 

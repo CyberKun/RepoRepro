@@ -126,6 +126,30 @@ def test_explicit_local_server_is_supported_without_api_key() -> None:
     assert config.api_key is None
 
 
+def test_provider_can_send_legacy_tokens_and_explicit_reasoning_budget(tmp_path: Path) -> None:
+    transport = FakeTransport(proposal().model_dump_json())
+    client = OpenAICompatibleProvider(
+        OpenAIConfig(
+            model="fixture",
+            api_key=SecretStr(SECRET),
+            token_parameter="max_tokens",
+            reasoning_effort="none",
+            max_completion_tokens=2048,
+        ),
+        FileArtifactStore(tmp_path),
+        transport=transport,
+    )
+    client.complete("Return JSON", "owned input")
+    assert transport.requests[0]["max_tokens"] == 2048
+    assert transport.requests[0]["reasoning_effort"] == "none"
+    assert "max_completion_tokens" not in transport.requests[0]
+
+
+def test_invalid_reasoning_setting_is_rejected() -> None:
+    with pytest.raises(ValueError, match="reasoning effort"):
+        OpenAIConfig(model="fixture", reasoning_effort="unsupported")
+
+
 def test_actual_http_compatible_transport_on_loopback(tmp_path: Path) -> None:
     received: list[dict[str, object]] = []
 

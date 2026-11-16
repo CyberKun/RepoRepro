@@ -45,6 +45,7 @@ def create(directory: Path, image: str) -> None:
         issue_quote="returns zero",
         behavior_contract="Empty input returns zero",
     )
+    (directory / "oracle.json").write_text(oracle.model_dump_json(indent=2), encoding="utf-8")
     data = build_input(issue, repository, oracle, ref=original, source_paths=("calculator.py",))
     (directory / "context.json").write_text(data.model_dump_json(indent=2), encoding="utf-8")
     (directory / "test_repro.py").write_text(
