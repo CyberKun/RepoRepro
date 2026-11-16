@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUTF8: "1"
+  NO_COLOR: "1"
+
+jobs:
+  checks:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev,qa]"
+      - name: Test components without Docker
+        run: python -m pytest -m "not docker_integration" --junitxml=reports/tests.xml --cov=repo_repro --cov-report=xml:reports/coverage.xml
+      - name: Check style and types
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
+          python -m mypy
+          python -m pip check
+      - name: Validate the source-only README quick start
+        run: |
+          repro --help
+          repro version
+          repro issue --issue-json examples/issue.json
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: tests-${{ matrix.os }}-${{ matrix.python }}
+          path: reports/
+          retention-days: 14
+
+  docker:
+    name: Docker and Capsule E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      REPRO_REQUIRE_DOCKER: "1"
+      REPRO_REQUIRE_ENGINE: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -e ".[dev,qa]"
+      - name: Prepare reviewed fixture images
+        run: |
+          docker pull --platform linux/amd64 python:3.11-slim-bookworm
+          python -m pip download --only-binary=:all: --python-version=3.11 --dest .tools/demo-wheels pytest==9.2.0 pip==26.3 setuptools==84.2.1
+          python examples/prepare_pytest_image.py --base-image python:3.11-slim-bookworm --wheelhouse .tools/demo-wheels --json > .tools/demo-images.json
+          python -c "import json,os; d=json.load(open('.tools/demo-images.json')); f=open(os.environ['GITHUB_ENV'],'a'); f.write('REPRO_DOCKER_TEST_IMAGE='+d['base_image']+'\nREPRO_PYTEST_IMAGE='+d['pytest_image']+'\n'); f.close()"
+      - name: Run real Docker integration tests
+        run: python -m pytest tests/integration --junitxml=reports/docker.xml
+      - name: Run the documented example
+        run: python examples/run_demo.py --images .tools/demo-images.json --output .repo-repro/ci-demo
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: docker-tests
+          path: reports/*.xml
+          retention-days: 14
+
+  package:
+    name: Build and install release artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python scripts/check_distribution.py dist
+      - name: Install wheel into a fresh environment
+        shell: bash
+        run: |
+          python -m venv .tools/wheel-check
+          .tools/wheel-check/bin/python -m pip install dist/*.whl
+          wheel_python="$PWD/.tools/wheel-check/bin/python"
+          issue="$PWD/examples/issue.json"
+          cd "$(mktemp -d)"
+          "$wheel_python" -m repo_repro --help
+          "$wheel_python" -m repo_repro version
+          "$wheel_python" -m repo_repro issue --issue-json "$issue"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: distributions
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

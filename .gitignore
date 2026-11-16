@@ -1,0 +1,40 @@
+# Python and build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Local environments and tools
+.venv/
+venv/
+.tools/
+.env
+.env.*
+!.env.example
+
+# Test and quality caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+reports/
+# Local design drafts and machine-specific QA history
+docs/qa.md
+docs/development.md
+docs/architecture.md
+docs/adr.md
+
+# Local reproduction state and potentially sensitive artifacts
+.repo-repro/
+*.repro.tar
+*.repro.tar.gz
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

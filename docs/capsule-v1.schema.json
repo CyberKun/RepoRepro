@@ -1,0 +1,349 @@
+{
+  "$defs": {
+    "CapsuleFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/FileRole"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "size_bytes",
+        "media_type",
+        "role"
+      ],
+      "title": "CapsuleFile",
+      "type": "object"
+    },
+    "CapsuleImage": {
+      "additionalProperties": false,
+      "properties": {
+        "image_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Image Id",
+          "type": "string"
+        },
+        "platform": {
+          "const": "linux/amd64",
+          "default": "linux/amd64",
+          "title": "Platform",
+          "type": "string"
+        },
+        "path": {
+          "const": "images/runtime.tar",
+          "default": "images/runtime.tar",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_id"
+      ],
+      "title": "CapsuleImage",
+      "type": "object"
+    },
+    "CapsuleSource": {
+      "additionalProperties": false,
+      "properties": {
+        "side": {
+          "enum": [
+            "original",
+            "fixed"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "commit": {
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "title": "Commit",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "side",
+        "commit",
+        "path"
+      ],
+      "title": "CapsuleSource",
+      "type": "object"
+    },
+    "FailureOracle": {
+      "additionalProperties": false,
+      "description": "Caller-owned contract, sealed before the model call; the model cannot change it.",
+      "properties": {
+        "exception_type": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.]*$",
+          "title": "Exception Type",
+          "type": "string"
+        },
+        "message_contains": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Message Contains",
+          "type": "string"
+        },
+        "issue_quote": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Issue Quote",
+          "type": "string"
+        },
+        "behavior_contract": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Behavior Contract",
+          "type": "string"
+        },
+        "node_id": {
+          "const": "repo_repro_generated/test_repro.py::test_repro",
+          "default": "repo_repro_generated/test_repro.py::test_repro",
+          "title": "Node Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exception_type",
+        "message_contains",
+        "issue_quote",
+        "behavior_contract"
+      ],
+      "title": "FailureOracle",
+      "type": "object"
+    },
+    "FileRole": {
+      "enum": [
+        "replay_data",
+        "diagnostic"
+      ],
+      "title": "FileRole",
+      "type": "string"
+    },
+    "ReplayRecipe": {
+      "additionalProperties": false,
+      "properties": {
+        "test_id": {
+          "format": "uuid",
+          "title": "Test Id",
+          "type": "string"
+        },
+        "test_path": {
+          "const": "tests/test_reproduction.py",
+          "default": "tests/test_reproduction.py",
+          "title": "Test Path",
+          "type": "string"
+        },
+        "test_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Test Sha256",
+          "type": "string"
+        },
+        "oracle": {
+          "$ref": "#/$defs/FailureOracle"
+        },
+        "helper_hashes": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Helper Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "test_id",
+        "test_sha256",
+        "oracle",
+        "helper_hashes"
+      ],
+      "title": "ReplayRecipe",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "pattern": "^1\\.0\\.(?:0|[1-9][0-9]*)$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "format": {
+      "const": "repo-repro-capsule",
+      "default": "repo-repro-capsule",
+      "title": "Format",
+      "type": "string"
+    },
+    "capsule_id": {
+      "format": "uuid",
+      "title": "Capsule Id",
+      "type": "string"
+    },
+    "producer_version": {
+      "default": "0.1.0",
+      "title": "Producer Version",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "offline",
+        "diagnostic"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "repository_url": {
+      "title": "Repository Url",
+      "type": "string"
+    },
+    "original_commit": {
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+      "title": "Original Commit",
+      "type": "string"
+    },
+    "fixed_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Fixed Commit"
+    },
+    "programming_language": {
+      "const": "python",
+      "title": "Programming Language",
+      "type": "string"
+    },
+    "runtime_version": {
+      "title": "Runtime Version",
+      "type": "string"
+    },
+    "test_framework": {
+      "const": "pytest",
+      "title": "Test Framework",
+      "type": "string"
+    },
+    "reproduction_command": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reproduction Command",
+      "type": "array"
+    },
+    "timeout": {
+      "maximum": 3600,
+      "minimum": 1,
+      "title": "Timeout",
+      "type": "integer"
+    },
+    "expected_behavior": {
+      "title": "Expected Behavior",
+      "type": "string"
+    },
+    "observed_behavior": {
+      "title": "Observed Behavior",
+      "type": "string"
+    },
+    "execution_status": {
+      "title": "Execution Status",
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/CapsuleFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CapsuleSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "image": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CapsuleImage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "replay": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReplayRecipe"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "schema_version",
+    "capsule_id",
+    "mode",
+    "repository_url",
+    "original_commit",
+    "fixed_commit",
+    "programming_language",
+    "runtime_version",
+    "test_framework",
+    "reproduction_command",
+    "timeout",
+    "expected_behavior",
+    "observed_behavior",
+    "execution_status",
+    "generated_at",
+    "files"
+  ],
+  "title": "CapsuleManifest",
+  "type": "object"
+}

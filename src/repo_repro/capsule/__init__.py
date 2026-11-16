@@ -1,0 +1,1 @@
+"""Portable reproduction capsule namespace."""

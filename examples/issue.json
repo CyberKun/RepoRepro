@@ -1,0 +1,7 @@
+{
+  "number": 1,
+  "html_url": "https://github.com/example/calculator/issues/1",
+  "title": "Empty input returns -1",
+  "body": "### Expected behavior\nreturns zero\n### Actual behavior\nreturns -1",
+  "labels": [{"name": "bug"}]
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+  <title id="title">Repo Repro</title>
+  <desc id="desc">A bug report becomes recorded evidence and a portable Capsule.</desc>
+  <rect width="1200" height="280" rx="18" fill="#101c24"/>
+  <path d="M72 73h52a34 34 0 0 1 0 68H72a34 34 0 0 1 0-68Z" transform="rotate(-36 98 107)" fill="none" stroke="#7be2b1" stroke-width="7"/>
+  <path d="m75 123 45-33" stroke="#7be2b1" stroke-width="4"/>
+  <text x="178" y="112" fill="#f3f5ef" font-family="Segoe UI,Arial,sans-serif" font-weight="700" font-size="56" letter-spacing="-2">Repo Repro</text>
+  <text x="180" y="154" fill="#b6c7cc" font-family="Segoe UI,Arial,sans-serif" font-size="21">Turn GitHub Bugs Into Reproducible, Verifiable Capsules.</text>
+  <path d="M64 202h1072" stroke="#31434b"/>
+  <g font-family="Consolas,monospace" font-size="15" letter-spacing="2">
+    <text x="66" y="244" fill="#7be2b1">01 / REPRODUCE</text>
+    <text x="344" y="244" fill="#7be2b1">02 / VERIFY</text>
+    <text x="608" y="244" fill="#7be2b1">03 / REPLAY</text>
+    <text x="858" y="244" fill="#7be2b1">04 / PRESERVE</text>
+  </g>
+</svg>

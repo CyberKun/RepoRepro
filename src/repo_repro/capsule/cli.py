@@ -1,0 +1,96 @@
+"""Data-only capsule operations and a separately explicit replay command."""
+
+from pathlib import Path
+from typing import Annotated
+
+import typer
+from pydantic import ValidationError
+
+from repo_repro.capsule.archive import extract_capsule, validate_capsule
+from repo_repro.capsule.exporter import CapsuleExporter
+from repo_repro.capsule.replay import CapsuleReplay
+from repo_repro.capsule.schema import CapsuleManifest, json_object
+from repo_repro.core.exceptions import RepoReproError
+from repo_repro.core.models import SandboxPolicy
+from repo_repro.reproduction.cli import read_json
+from repo_repro.reproduction.models import DifferentialResult, ReproductionResult
+from repo_repro.storage.artifacts import FileArtifactStore
+
+app = typer.Typer(
+    help="Versioned, verified capsules. Inspect/extract never execute code.", no_args_is_help=True
+)
+
+
+def fail(error: Exception) -> None:
+    typer.echo(
+        str(error)
+        if isinstance(error, RepoReproError)
+        else f"Invalid capsule input ({type(error).__name__})",
+        err=True,
+    )
+    raise typer.Exit(3) from None
+
+
+@app.command("schema")
+def schema() -> None:
+    import json
+
+    typer.echo(json.dumps(CapsuleManifest.model_json_schema(), indent=2))
+
+
+@app.command("export")
+def export(
+    result: Path,
+    destination: Path,
+    artifacts: Path = Path(".repo-repro/evidence"),
+    diagnostic_only: bool = False,
+) -> None:
+    """Export captured sources/runtime or explicitly non-replayable diagnostics."""
+    try:
+        data = json_object(read_json(result))
+        record = (
+            DifferentialResult.model_validate(data)
+            if isinstance(data, dict) and "original" in data
+            else ReproductionResult.model_validate(data)
+        )
+        manifest = CapsuleExporter(FileArtifactStore(artifacts)).export(
+            record, destination, diagnostic_only=diagnostic_only
+        )
+        typer.echo(manifest.model_dump_json(indent=2))
+    except (RepoReproError, ValidationError, ValueError, OSError) as error:
+        fail(error)
+
+
+@app.command("validate")
+@app.command("inspect")
+def inspect(capsule: Path) -> None:
+    """Validate schema, complete file catalog and hashes; never load images or execute."""
+    try:
+        typer.echo(validate_capsule(capsule).model_dump_json(indent=2))
+    except (RepoReproError, ValueError, OSError) as error:
+        fail(error)
+
+
+@app.command("unpack")
+def unpack(capsule: Path, destination: Path) -> None:
+    """Validate and safely extract into a new directory; scripts remain data."""
+    try:
+        manifest = extract_capsule(capsule, destination)
+        typer.echo(f"Extracted {manifest.capsule_id} into {destination}; nothing executed")
+    except (RepoReproError, ValueError, OSError) as error:
+        fail(error)
+
+
+@app.command("replay")
+def replay(
+    capsule: Path, workspace: Path, policy: Annotated[Path, typer.Option("--policy")]
+) -> None:
+    """Authorize sandbox replay under a LOCAL policy, without bundled scripts."""
+    try:
+        selected = SandboxPolicy.model_validate(json_object(read_json(policy)))
+        report = CapsuleReplay().replay(capsule, workspace, local_policy=selected, authorized=True)
+        typer.echo(report.model_dump_json(indent=2))
+        if report.status != "MATCHED":
+            raise typer.Exit(1)
+    except (RepoReproError, ValidationError, ValueError, OSError) as error:
+        fail(error)

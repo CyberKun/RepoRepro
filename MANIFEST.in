@@ -1,0 +1,15 @@
+include .gitignore
+include .gitattributes
+include CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md CHANGELOG.md
+recursive-include .github *.yml *.md
+recursive-include tests *.py *.json
+include docs/sandbox.md docs/reproduction.md docs/capsule-v1.md docs/capsule-v1.schema.json
+include docs/releasing.md
+recursive-include docs/assets *.svg *.gif
+recursive-include examples *.md *.py *.json
+recursive-include scripts *.py
+exclude docs/qa.md docs/development.md docs/architecture.md docs/adr.md
+prune .tools
+prune .repo-repro
+prune reports
+global-exclude __pycache__ *.py[cod]

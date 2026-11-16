@@ -1,0 +1,27 @@
+# Changelog
+
+## 0.1.0 — 2026-11-16
+
+Initial alpha release for Python + pytest.
+
+### Added
+
+- CLI for GitHub Issue retrieval, offline JSON input, and read-only Python repository analysis.
+- Reviewed-test sealing and optional OpenAI-compatible candidate generation with audit records.
+- Repeated Docker execution with resource limits, runtime inventory, bounded output, and cleanup evidence.
+- Single-version reproduction and original/fixed differential verification with flaky and drift detection.
+- Capsule v1 offline export, validation, extraction, and explicit local-policy replay.
+- An owned bug/fix demo, contributor documentation, and CI for tests, package installation, style, and types.
+
+### Security
+
+- Reject unsafe archive paths, links, ambiguous metadata, invalid checksums, and oversized inputs.
+- Redact diagnostic credentials and reject detected secrets in replay-critical data, including private keys in image files.
+- Restrict generated tests to the supported simple pytest shape and reject known sources of manufactured failures.
+
+### Known limits
+
+- Python + pytest only; one simple test without fixtures, markers, or parametrization.
+- Linux amd64 Docker execution; compatible local runner helpers are required for replay.
+- Dependency preparation/freezing, additional isolation backends, SQLite indexing, and generic report generation are not implemented.
+- Evidence is not independently authenticated against malicious target code. See [SECURITY.md](SECURITY.md).
