@@ -12,7 +12,7 @@ _FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 
 def links(text: str) -> list[tuple[int, str]]:
     """Return line numbers and destinations, excluding fenced examples."""
-    found = []
+    found: list[tuple[int, str]] = []
     fence = ""
     for number, line in enumerate(text.splitlines(), start=1):
         marker = _FENCE.match(line)
